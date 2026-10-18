@@ -1251,67 +1251,6 @@ h1, h2, h3, h4, .brand-logo-text, .stat-value {
   line-height: 1.4;
 }
 
-/* =============================================================================
-   8. ASSESSMENT COMPLIANCE MATRIX (Tailored to Guidelines)
-   ============================================================================= */
-
-.compliance-matrix-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 1.25rem;
-  margin-bottom: 2rem;
-}
-
-.compliance-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 1.4rem;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-}
-
-.compliance-card.verified {
-  border-left: 4px solid var(--mint-accent);
-}
-
-.compliance-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
-}
-
-.compliance-category {
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-muted);
-}
-
-.compliance-score {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--mint-accent);
-  background: rgba(16, 185, 129, 0.15);
-  padding: 0.15rem 0.5rem;
-  border-radius: var(--radius-full);
-}
-
-.compliance-title {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: #ffffff;
-  margin-bottom: 0.4rem;
-}
-
-.compliance-desc {
-  font-size: 0.82rem;
-  color: var(--text-secondary);
-  line-height: 1.45;
-}
 
 /* =============================================================================
    9. BUTTONS, MODALS, AND TOAST NOTIFICATIONS

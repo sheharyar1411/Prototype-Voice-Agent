@@ -374,6 +374,59 @@ async def vapi_tool_call(
     return await _handle_function_call(message, db)
 
 
+@router.get("/sessions")
+async def list_call_sessions(
+    limit: int = 50,
+    offset: int = 0,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    List historical voice call sessions, duration, and transcripts.
+    Ordered by creation date descending.
+    """
+    from sqlalchemy import select
+    from app.schemas.patient import CallSessionResponse
+    from app.core.responses import success_response
+
+    stmt = (
+        select(CallSession)
+        .order_by(CallSession.created_at.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    result = await db.execute(stmt)
+    sessions = result.scalars().all()
+    data = [
+        CallSessionResponse.model_validate(s).model_dump(mode="json")
+        for s in sessions
+    ]
+    return success_response(data=data)
+
+
+@router.get("/sessions/{session_id}")
+async def get_call_session(
+    session_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Retrieve full transcript and metadata for a specific call session."""
+    from sqlalchemy import select
+    from app.schemas.patient import CallSessionResponse
+    from app.core.responses import error_response, success_response
+
+    stmt = select(CallSession).where(CallSession.id == session_id)
+    result = await db.execute(stmt)
+    session = result.scalar_one_or_none()
+    if not session:
+        return error_response(
+            message=f"Call session {session_id} not found.",
+            status_code=404,
+            code="NOT_FOUND",
+        )
+    return success_response(
+        data=CallSessionResponse.model_validate(session).model_dump(mode="json")
+    )
+
+
 # ---------------------------------------------------------------------------
 # Internal handlers
 # ---------------------------------------------------------------------------

@@ -59,6 +59,10 @@ class Settings(BaseSettings):
     # --- Public URL (ngrok or deployed origin for Vapi webhooks) ---
     public_base_url: str = "http://localhost:8000"
 
+    # --- Portal Clinical Admin Credentials ---
+    admin_username: str = "admin@gerta.ai"
+    admin_password: str = "admin123gertai"
+
 
 @lru_cache
 def get_settings() -> Settings:

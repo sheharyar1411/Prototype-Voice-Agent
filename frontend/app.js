@@ -23,8 +23,6 @@ const VIEW_TITLES = {
   'view-patients': 'Patient Demographics Registry',
   'view-simulator': 'Voice Agent Console (Sarah)',
   'view-sessions': 'Call Transcripts & Telemetry Logs',
-  'view-api': 'REST API & Webhook Specifications',
-  'view-compliance': 'Assessment Guidelines Audit',
   'view-future-overview': 'Enterprise Roadmap Overview',
   'view-future-ehr': 'EHR & HL7 FHIR Bridge (Phase 2)',
   'view-future-scheduling': 'Clinic Slot Scheduling Simulator (Phase 2)',

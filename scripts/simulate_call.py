@@ -30,7 +30,7 @@ BASE_URL = "http://127.0.0.1:8000"
 
 def print_banner():
     print("=" * 70)
-    print("   METRO HEALTH CLINIC — VOICE AGENT SIMULATOR (SARAH)")
+    print("   GERTA AI — CLINICAL VOICE AGENT SIMULATOR (SARAH)")
     print("=" * 70)
     print("Simulating inbound call via Vapi webhook endpoints...\n")
 

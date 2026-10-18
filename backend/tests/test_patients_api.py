@@ -432,4 +432,4 @@ class TestResponseEnvelope:
         resp = await client.get("/")
         assert resp.status_code == 200
         assert "text/html" in resp.headers["content-type"]
-        assert "Metro Health Clinic" in resp.text
+        assert "Gerta AI" in resp.text

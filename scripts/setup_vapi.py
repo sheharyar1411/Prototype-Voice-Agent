@@ -17,8 +17,9 @@ import sys
 import httpx
 from dotenv import load_dotenv
 
-# Add parent directory to path so we can import app modules directly
+# Add parent directory and backend to path so we can import app modules directly
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "backend")))
 
 from app.api.voice_webhooks import _build_assistant_config
 
@@ -53,7 +54,7 @@ def main():
     webhook_url = f"{server_url}/api/voice/webhook"
 
     print("=" * 65)
-    print("   METRO HEALTH CLINIC — VAPI ASSISTANT PROVISIONING")
+    print("   GERTA AI — VAPI ASSISTANT PROVISIONING")
     print("=" * 65)
     print(f"Server Webhook Target: {webhook_url}")
 

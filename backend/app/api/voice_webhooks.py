@@ -342,7 +342,7 @@ async def vapi_webhook(
     if event_type == "assistant-request":
         return {"assistant": _build_assistant_config()}
 
-    elif event_type == "function-call":
+    elif event_type in ("function-call", "tool-calls"):
         return await _handle_function_call(message, db)
 
     elif event_type == "end-of-call-report":
@@ -383,26 +383,68 @@ async def _handle_function_call(
     db: AsyncSession,
 ) -> dict[str, Any]:
     """
-    Dispatch a Vapi function call to the appropriate service handler.
+    Dispatch Vapi function call(s) or tool call(s) to the appropriate service handler.
 
-    Returns a structured result that Vapi forwards to the LLM.
+    Supports both:
+      1. Modern Vapi 'tool-calls' with message['toolCalls'] or message['toolCallList']
+      2. Legacy Vapi 'function-call' with message['functionCall']
+    Returns structured results correlated by toolCallId.
     """
+    tool_calls = message.get("toolCalls") or message.get("toolCallList")
+    results = []
+
+    if tool_calls and isinstance(tool_calls, list):
+        for tc in tool_calls:
+            tool_id = tc.get("id") or tc.get("toolCallId")
+            fn = tc.get("function") or {}
+            fn_name = fn.get("name") or tc.get("name") or ""
+            raw_args = fn.get("arguments") or tc.get("arguments") or tc.get("parameters") or {}
+
+            if isinstance(raw_args, str):
+                try:
+                    fn_args = json.loads(raw_args)
+                except Exception:
+                    fn_args = {}
+            else:
+                fn_args = raw_args or {}
+
+            logger.info("Tool call [%s]: %s args=%s", tool_id, fn_name, json.dumps(fn_args, default=str))
+            try:
+                res = await _dispatch_tool_call(fn_name, fn_args, db)
+            except Exception as exc:
+                logger.exception("Tool call '%s' failed", fn_name)
+                res = {"success": False, "error": f"An internal error occurred: {type(exc).__name__}: {exc}"}
+
+            result_entry: dict[str, Any] = {
+                "name": fn_name,
+                "result": json.dumps(res, default=str),
+            }
+            if tool_id:
+                result_entry["toolCallId"] = tool_id
+            results.append(result_entry)
+
+        return {"results": results}
+
+    # Fallback to legacy single function-call structure
     function_call = message.get("functionCall", {})
     fn_name = function_call.get("name", "")
-    fn_args = function_call.get("parameters", {})
+    raw_args = function_call.get("parameters", {})
+    if isinstance(raw_args, str):
+        try:
+            fn_args = json.loads(raw_args)
+        except Exception:
+            fn_args = {}
+    else:
+        fn_args = raw_args or {}
 
-    logger.info("Tool call: %s args=%s", fn_name, json.dumps(fn_args, default=str))
-
+    logger.info("Function call: %s args=%s", fn_name, json.dumps(fn_args, default=str))
     try:
-        result = await _dispatch_tool_call(fn_name, fn_args, db)
+        res = await _dispatch_tool_call(fn_name, fn_args, db)
     except Exception as exc:
-        logger.exception("Tool call '%s' failed", fn_name)
-        result = {
-            "success": False,
-            "error": f"An internal error occurred: {type(exc).__name__}: {exc}",
-        }
+        logger.exception("Function call '%s' failed", fn_name)
+        res = {"success": False, "error": f"An internal error occurred: {type(exc).__name__}: {exc}"}
 
-    return {"results": [{"result": json.dumps(result, default=str)}]}
+    return {"results": [{"name": fn_name, "result": json.dumps(res, default=str)}]}
 
 
 async def _dispatch_tool_call(

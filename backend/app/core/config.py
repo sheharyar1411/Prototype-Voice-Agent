@@ -25,14 +25,14 @@ class Settings(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(".env", "../.env"),
         env_file_encoding="utf-8",
         extra="ignore",
     )
 
     # --- Application ---
     app_env: str = "local"
-    app_name: str = "Patient Registration Voice Agent"
+    app_name: str = "Gerta AI — Clinical Voice Agent"
     app_version: str = "1.0.0"
     debug: bool = True
 

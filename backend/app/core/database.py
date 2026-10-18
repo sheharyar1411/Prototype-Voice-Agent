@@ -28,12 +28,23 @@ settings = get_settings()
 # ---------------------------------------------------------------------------
 # Engine configuration — adapt connection args based on the database backend.
 # ---------------------------------------------------------------------------
+# Engine configuration — adapt connection args based on the database backend.
+# Automatically normalize postgres:// and postgresql:// to postgresql+asyncpg://
+# ---------------------------------------------------------------------------
+_raw_db_url = settings.database_url.strip()
+if _raw_db_url.startswith("postgres://"):
+    _db_url = _raw_db_url.replace("postgres://", "postgresql+asyncpg://", 1)
+elif _raw_db_url.startswith("postgresql://") and not _raw_db_url.startswith("postgresql+"):
+    _db_url = _raw_db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+else:
+    _db_url = _raw_db_url
+
 _connect_args: dict = {}
 _engine_kwargs: dict = {
     "echo": settings.debug and settings.app_env == "local",
 }
 
-if settings.database_url.startswith("sqlite"):
+if _db_url.startswith("sqlite"):
     # SQLite requires check_same_thread=False for async usage.
     _connect_args["check_same_thread"] = False
 else:
@@ -41,7 +52,7 @@ else:
     _engine_kwargs["pool_pre_ping"] = True
 
 engine = create_async_engine(
-    settings.database_url,
+    _db_url,
     connect_args=_connect_args,
     **_engine_kwargs,
 )
@@ -80,6 +91,14 @@ async def init_db() -> None:
     This is a convenience for first-run bootstrapping. In production,
     schema evolution is managed by Alembic migrations.
     """
+    import os
+    if _db_url.startswith("sqlite"):
+        raw_path = _db_url.split(":///")[-1]
+        if raw_path and not raw_path.startswith(":memory:"):
+            db_dir = os.path.dirname(raw_path)
+            if db_dir:
+                os.makedirs(db_dir, exist_ok=True)
+
     from app.models.patient import Base  # noqa: F811 — deferred import
 
     logger.info("Initializing database tables...")

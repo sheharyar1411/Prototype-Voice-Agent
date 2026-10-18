@@ -10,29 +10,49 @@ ENV/
 
 # Environment secrets
 .env
+.env.*
+!.env.example
+*.local.env
 
-# IDE
+# IDE & Editor files
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# OS
+# Operating System
 Thumbs.db
 .DS_Store
 
-# Database (local SQLite fallback)
+# Local SQLite Database files
 data/*.db
 data/*.db-journal
 data/*.db-wal
+*.db
 
-# Pytest
+# Pytest & Coverage
 .pytest_cache/
 htmlcov/
 .coverage
+*.log
 
-# Distribution
+# Scratch directory & temporary test scripts (per workspace rules)
+scratch/
+scratch/*
+scratch/**
+*.scratch.*
+scratch_*.py
+test_scratch*
+tests_scratch/
+call-logs-*.json
+*.call-log.json
+*.test.log
+test_reports/
+tmp/
+temp/
+
+# Distribution & Build
 dist/
 build/
 *.egg-info/

@@ -16,5 +16,22 @@ services:
       retries: 10
     restart: unless-stopped
 
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://patient_reg:patient_reg_secret@postgres:5432/patient_registration
+      APP_ENV: local
+      DEBUG: "true"
+      VAPI_API_KEY: ${VAPI_API_KEY:-}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   postgres_data:

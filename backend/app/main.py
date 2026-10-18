@@ -17,7 +17,13 @@ ROUTER MOUNTS:
 
 import logging
 import os
+import sys
 from contextlib import asynccontextmanager
+
+# Ensure backend root is on sys.path so 'app' imports work from project root or backend dir
+_backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _backend_dir not in sys.path:
+    sys.path.insert(0, _backend_dir)
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -73,10 +79,11 @@ async def lifespan(app: FastAPI):
 is_prod = settings.app_env.lower() in ("prod", "production")
 
 app = FastAPI(
-    title="Patient Registration Voice Agent API",
+    title="Gerta AI — Clinical Voice Agent API",
     description=(
-        "REST API for patient demographic registration with Vapi voice AI integration. "
-        "Supports CRUD operations, server-side validation, and automated phone-based intake."
+        "Autonomous healthcare voice platform for patient demographic registration, "
+        "telephony intake, and clinical operations. Supports CRUD operations, server-side "
+        "validation, and automated phone-based intake."
     ),
     version=settings.app_version,
     lifespan=lifespan,
@@ -131,8 +138,14 @@ async def health():
 
 
 # Mount static assets and serve dashboard SPA
-_static_dir = os.path.join(os.path.dirname(__file__), "static")
-if os.path.isdir(_static_dir):
+_possible_frontend_dirs = [
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend")),
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend")),
+    os.path.abspath(os.path.join(os.getcwd(), "frontend")),
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "static")),
+]
+_static_dir = next((d for d in _possible_frontend_dirs if os.path.isdir(d)), None)
+if _static_dir:
     app.mount("/static", StaticFiles(directory=_static_dir), name="static")
 
     @app.get("/", include_in_schema=False)

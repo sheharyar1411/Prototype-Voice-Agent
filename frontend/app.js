@@ -103,7 +103,6 @@ const elements = {
   authPassword: document.getElementById('auth-input-password'),
   btnTogglePwd: document.getElementById('btn-toggle-pwd'),
   pwdIconShow: document.getElementById('pwd-icon-show'),
-  btnAutofillDemo: document.getElementById('btn-autofill-demo'),
   btnAuthSubmit: document.getElementById('btn-auth-submit'),
   authSubmitTxt: document.getElementById('auth-submit-txt'),
   authErrorAlert: document.getElementById('auth-error-alert'),
@@ -1235,11 +1234,6 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast('Signed out of clinical session.', 'info');
   });
 
-  elements.btnAutofillDemo?.addEventListener('click', () => {
-    elements.authUsername.value = 'admin@gerta.ai';
-    elements.authPassword.value = 'admin123gertai';
-    showToast('Standard administrator credentials populated.', 'info');
-  });
 
   elements.btnTogglePwd?.addEventListener('click', () => {
     const isPwd = elements.authPassword.type === 'password';

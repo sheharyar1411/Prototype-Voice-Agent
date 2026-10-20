@@ -1667,7 +1667,7 @@ IEA*1*000000001~</pre>
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
               <circle cx="12" cy="7" r="4"/>
             </svg>
-            <input type="text" id="auth-input-username" class="form-input-gerta with-icon" value="admin@gerta.ai" required autocomplete="username" placeholder="admin@gerta.ai">
+            <input type="text" id="auth-input-username" class="form-input-gerta with-icon" required autocomplete="username" placeholder="name@organization.com">
           </div>
         </div>
 
@@ -1678,18 +1678,11 @@ IEA*1*000000001~</pre>
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
               <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
             </svg>
-            <input type="password" id="auth-input-password" class="form-input-gerta with-icon" value="admin123gertai" required autocomplete="current-password" placeholder="••••••••••••">
+            <input type="password" id="auth-input-password" class="form-input-gerta with-icon" required autocomplete="current-password" placeholder="••••••••••••">
             <button type="button" id="btn-toggle-pwd" class="pwd-toggle-btn" title="Toggle password visibility">
               <svg id="pwd-icon-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
             </button>
           </div>
-        </div>
-
-        <div class="auth-quick-preset-row">
-          <span class="auth-preset-label">Standard Credentials:</span>
-          <button type="button" id="btn-autofill-demo" class="auth-preset-chip" title="Autofill standard admin credentials">
-            <span>admin@gerta.ai</span> • <span>admin123gertai</span>
-          </button>
         </div>
 
         <button type="submit" id="btn-auth-submit" class="btn-gerta primary auth-submit-btn">

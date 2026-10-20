@@ -1666,42 +1666,6 @@ h1, h2, h3, h4, .brand-logo-text, .stat-value {
   color: #ffffff;
 }
 
-.auth-quick-preset-row {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  padding: 0.75rem 0.9rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px dashed rgba(255, 255, 255, 0.12);
-  border-radius: var(--radius-sm);
-}
-
-.auth-preset-label {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 600;
-}
-
-.auth-preset-chip {
-  background: transparent;
-  border: none;
-  color: var(--cyan-primary);
-  font-family: inherit;
-  font-size: 0.78rem;
-  font-weight: 600;
-  text-align: left;
-  cursor: pointer;
-  padding: 0;
-  transition: color var(--transition-fast);
-}
-
-.auth-preset-chip:hover {
-  color: #ffffff;
-  text-decoration: underline;
-}
-
 .auth-submit-btn {
   width: 100%;
   padding: 0.85rem 1.25rem;

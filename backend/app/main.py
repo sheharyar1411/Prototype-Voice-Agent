@@ -25,18 +25,19 @@ _backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _backend_dir not in sys.path:
     sys.path.insert(0, _backend_dir)
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.auth import router as auth_router
 from app.api.patients import router as patients_router
 from app.api.voice_webhooks import router as voice_router
 from app.core.config import get_settings
-from app.core.database import init_db
+from app.core.database import get_db, init_db
 from app.core.responses import error_response
 
 logging.basicConfig(
@@ -129,7 +130,7 @@ app.include_router(voice_router)
 async def alias_sessions(
     limit: int = 50,
     offset: int = 0,
-    db = Depends(init_db.__module__ and get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """Top-level alias for call sessions audit log."""
     from app.api.voice_webhooks import list_call_sessions

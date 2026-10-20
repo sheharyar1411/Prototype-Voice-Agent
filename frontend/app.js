@@ -15,6 +15,10 @@ let state = {
   callActive: false,
   callTimerInterval: null,
   callSeconds: 0,
+  token: localStorage.getItem('gerta_auth_token') || null,
+  user: JSON.parse(localStorage.getItem('gerta_auth_user') || 'null'),
+  sessions: [],
+  selectedSession: null,
 };
 
 // View Titles Mapping
@@ -88,9 +92,35 @@ const elements = {
   preset3: document.getElementById('gerta-preset-3'),
   preset4: document.getElementById('gerta-preset-4'),
 
-  // Sessions
+  // Sessions & Telemetry
   sessionsTbody: document.getElementById('gerta-sessions-tbody'),
   btnSyncSessions: document.getElementById('btn-sync-sessions'),
+
+  // Authentication Elements
+  authGate: document.getElementById('gerta-auth-gate'),
+  loginForm: document.getElementById('gerta-login-form'),
+  authUsername: document.getElementById('auth-input-username'),
+  authPassword: document.getElementById('auth-input-password'),
+  btnTogglePwd: document.getElementById('btn-toggle-pwd'),
+  pwdIconShow: document.getElementById('pwd-icon-show'),
+  btnAutofillDemo: document.getElementById('btn-autofill-demo'),
+  btnAuthSubmit: document.getElementById('btn-auth-submit'),
+  authSubmitTxt: document.getElementById('auth-submit-txt'),
+  authErrorAlert: document.getElementById('auth-error-alert'),
+  authErrorText: document.getElementById('auth-error-text'),
+  topbarUserEmail: document.getElementById('topbar-user-email'),
+  btnLogout: document.getElementById('btn-gerta-logout'),
+
+  // Transcript Audit Modal
+  modalTranscript: document.getElementById('gerta-modal-transcript'),
+  btnCloseTranscript: document.getElementById('btn-close-gerta-transcript'),
+  btnDismissTranscript: document.getElementById('btn-dismiss-transcript'),
+  btnCopyTranscript: document.getElementById('btn-copy-transcript'),
+  transMetaId: document.getElementById('trans-meta-id'),
+  transMetaPhone: document.getElementById('trans-meta-phone'),
+  transMetaStatus: document.getElementById('trans-meta-status'),
+  transMetaTime: document.getElementById('trans-meta-time'),
+  transDialogueBody: document.getElementById('transcript-dialogue-body'),
 };
 
 // ---------------------------------------------------------------------------
@@ -108,17 +138,22 @@ function showToast(message, type = 'info') {
 }
 
 // ---------------------------------------------------------------------------
-// API Gateway (Enforces { data, error } Envelope)
+// API Gateway (Enforces { data, error } Envelope + Auth Bearer Token)
 // ---------------------------------------------------------------------------
 async function apiRequest(endpoint, options = {}) {
   try {
+    const headers = {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      ...(options.headers || {}),
+    };
+    if (state.token && !headers['Authorization']) {
+      headers['Authorization'] = `Bearer ${state.token}`;
+    }
+
     const res = await fetch(`${API_BASE}${endpoint}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        ...(options.headers || {}),
-      },
       ...options,
+      headers,
     });
 
     const json = await res.json();
@@ -642,7 +677,19 @@ async function endGertaCall() {
 
   appendTranscriptMsg('Sarah (Agent)', 'Thank you for calling. Have a wonderful day!', 'agent');
 
-  // Send end-of-call report
+  // Extract all turns from chatStreamBody into serialized conversation log
+  const turns = [];
+  elements.chatStreamBody.querySelectorAll('.transcript-msg').forEach((msg) => {
+    const speaker = msg.querySelector('.speaker-label')?.textContent?.trim() || '';
+    const bubble = msg.querySelector('.bubble')?.textContent?.trim() || '';
+    if (speaker && bubble) {
+      turns.push(`${speaker}: ${bubble}`);
+    }
+  });
+  const serializedTranscript = turns.join('\n\n') || 'Simulated voice intake completed from Gerta AI console.';
+  const phone = elements.callerNumInput.value.trim() || '5125550188';
+
+  // Send end-of-call report with complete conversation transcript
   try {
     await fetch('/api/voice/webhook', {
       method: 'POST',
@@ -650,14 +697,15 @@ async function endGertaCall() {
       body: JSON.stringify({
         message: {
           type: 'end-of-call-report',
-          call: { id: `sim-${Date.now()}`, customer: { number: elements.callerNumInput.value } },
-          transcript: 'Simulated voice intake completed from Gerta AI console.',
+          call: { id: `sim-${Date.now()}`, customer: { number: phone } },
+          transcript: serializedTranscript,
         },
       }),
     });
     showToast('Call session transcript logged to database.', 'info');
+    await loadSessions();
   } catch (e) {
-    console.error(e);
+    console.error('Failed to log end-of-call session:', e);
   }
 }
 
@@ -953,6 +1001,158 @@ async function runScenario4Spelling() {
 }
 
 // ---------------------------------------------------------------------------
+// Telephony Call Sessions & Audit Logs
+// ---------------------------------------------------------------------------
+async function loadSessions() {
+  if (!elements.sessionsTbody) return;
+  try {
+    elements.sessionsTbody.innerHTML = `
+      <tr>
+        <td colspan="5" class="empty-state">
+          <p>Loading telephony call records from database...</p>
+        </td>
+      </tr>
+    `;
+
+    const sessions = await apiRequest('/api/voice/sessions');
+    state.sessions = sessions || [];
+
+    if (elements.statSessions) {
+      elements.statSessions.textContent = state.sessions.length;
+    }
+
+    if (!state.sessions.length) {
+      elements.sessionsTbody.innerHTML = `
+        <tr>
+          <td colspan="5" class="empty-state">
+            <p>No call sessions recorded yet. Start a call in the simulator or dial in via Vapi.</p>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    elements.sessionsTbody.innerHTML = state.sessions
+      .map((s) => {
+        const phone = formatPhone(s.caller_phone);
+        const statusColor = s.status === 'completed' ? '#34d399' : s.status === 'in-progress' ? 'var(--amber-accent)' : '#f87171';
+        const dateStr = s.created_at ? new Date(s.created_at).toLocaleString() : 'N/A';
+        const preview = s.transcript ? escapeHtml(s.transcript.slice(0, 85)) + (s.transcript.length > 85 ? '...' : '') : 'No transcript text available';
+
+        return `
+          <tr>
+            <td>
+              <code style="color:var(--cyan-primary); font-size:0.75rem;">${escapeHtml(s.id.slice(0, 8))}...</code>
+            </td>
+            <td>
+              <span style="font-weight:600; color:#ffffff;">${escapeHtml(phone)}</span>
+            </td>
+            <td>
+              <span class="badge-status-pill" style="border-color:${statusColor}; color:${statusColor}; font-size:0.7rem; text-transform:uppercase;">
+                ${escapeHtml(s.status)}
+              </span>
+            </td>
+            <td style="color:var(--text-muted); font-size:0.8rem;">
+              ${escapeHtml(dateStr)}
+            </td>
+            <td>
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem;">
+                <span style="color:var(--text-secondary); font-size:0.78rem; max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                  ${preview}
+                </span>
+                <button class="btn-gerta ghost sm" onclick="openTranscriptModal('${s.id}')" style="padding:0.25rem 0.65rem; font-size:0.75rem; white-space:nowrap;">
+                  View Transcript
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      })
+      .join('');
+  } catch (err) {
+    console.error('Failed to load call sessions:', err);
+    elements.sessionsTbody.innerHTML = `
+      <tr>
+        <td colspan="5" class="empty-state">
+          <p style="color:var(--rose-accent);">Failed to load call records: ${escapeHtml(err.message)}</p>
+        </td>
+      </tr>
+    `;
+  }
+}
+
+window.openTranscriptModal = function (sessionId) {
+  const session = state.sessions.find((s) => s.id === sessionId);
+  if (!session) return;
+  state.selectedSession = session;
+
+  elements.transMetaId.textContent = session.id;
+  elements.transMetaPhone.textContent = formatPhone(session.caller_phone);
+  elements.transMetaStatus.textContent = (session.status || 'COMPLETED').toUpperCase();
+  elements.transMetaTime.textContent = session.created_at ? new Date(session.created_at).toLocaleString() : 'N/A';
+
+  // Render dialogue turns
+  elements.transDialogueBody.innerHTML = '';
+  if (!session.transcript) {
+    elements.transDialogueBody.innerHTML = '<p class="empty-state" style="padding:2rem 0;">No transcript text available for this session.</p>';
+  } else {
+    let turns = [];
+    try {
+      const parsed = JSON.parse(session.transcript);
+      if (Array.isArray(parsed)) turns = parsed;
+    } catch (_) {
+      const rawTurns = session.transcript.split(/\n\n+/);
+      rawTurns.forEach((block) => {
+        const trimmed = block.trim();
+        if (!trimmed) return;
+        if (trimmed.startsWith('Sarah (Agent):') || trimmed.startsWith('Sarah:')) {
+          turns.push({ speaker: 'Sarah (Agent)', text: trimmed.replace(/^Sarah.*?:/i, '').trim(), type: 'agent' });
+        } else if (trimmed.startsWith('Caller:')) {
+          turns.push({ speaker: 'Caller', text: trimmed.replace(/^Caller:/i, '').trim(), type: 'caller' });
+        } else if (trimmed.startsWith('System') || trimmed.startsWith('⚡ Tool:')) {
+          turns.push({ speaker: 'System Telemetry', text: trimmed, type: 'system' });
+        } else {
+          turns.push({ speaker: 'Dialogue', text: trimmed, type: 'agent' });
+        }
+      });
+    }
+
+    if (!turns.length) {
+      elements.transDialogueBody.innerHTML = `<div class="transcript-turn agent"><span class="turn-speaker">Recorded Audio Transcript</span><div class="turn-bubble">${escapeHtml(session.transcript)}</div></div>`;
+    } else {
+      elements.transDialogueBody.innerHTML = turns
+        .map((t) => `
+          <div class="transcript-turn ${t.type || (t.speaker?.includes('Sarah') ? 'agent' : t.speaker?.includes('Caller') ? 'caller' : 'system')}">
+            <span class="turn-speaker">${escapeHtml(t.speaker || 'Voice Turn')}</span>
+            <div class="turn-bubble">${escapeHtml(t.text || '').replace(/\n/g, '<br>')}</div>
+          </div>
+        `)
+        .join('');
+    }
+  }
+
+  elements.modalTranscript.classList.remove('hidden');
+};
+
+window.closeTranscriptModal = function () {
+  elements.modalTranscript.classList.add('hidden');
+};
+
+// ---------------------------------------------------------------------------
+// Authentication & HIPAA Access Control
+// ---------------------------------------------------------------------------
+function checkAuth() {
+  if (state.token) {
+    elements.authGate?.classList.add('hidden');
+    if (elements.topbarUserEmail) {
+      elements.topbarUserEmail.textContent = state.user?.email || 'admin@gerta.ai';
+    }
+  } else {
+    elements.authGate?.classList.remove('hidden');
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 function formatPhone(phone) {
@@ -981,7 +1181,87 @@ function sleep(ms) {
 // Event Listeners Initialization
 // ---------------------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
+  checkAuth();
   loadPatients();
+  loadSessions();
+
+  // Authentication Events
+  elements.loginForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = elements.authUsername.value.trim();
+    const password = elements.authPassword.value.trim();
+    elements.authSubmitTxt.textContent = 'Verifying credentials...';
+    elements.btnAuthSubmit.disabled = true;
+    elements.authErrorAlert.classList.add('hidden');
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error ? data.error.message : 'Authentication failed.');
+      }
+
+      state.token = data.data.token;
+      state.user = data.data.user;
+      localStorage.setItem('gerta_auth_token', state.token);
+      localStorage.setItem('gerta_auth_user', JSON.stringify(state.user));
+
+      checkAuth();
+      showToast('Welcome, Administrator. HIPAA session active.', 'success');
+      loadPatients();
+      loadSessions();
+    } catch (err) {
+      elements.authErrorText.textContent = err.message || 'Invalid username or password.';
+      elements.authErrorAlert.classList.remove('hidden');
+    } finally {
+      elements.authSubmitTxt.textContent = 'Authenticate & Enter Portal';
+      elements.btnAuthSubmit.disabled = false;
+    }
+  });
+
+  elements.btnLogout?.addEventListener('click', async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (_) {}
+    state.token = null;
+    state.user = null;
+    localStorage.removeItem('gerta_auth_token');
+    localStorage.removeItem('gerta_auth_user');
+    checkAuth();
+    showToast('Signed out of clinical session.', 'info');
+  });
+
+  elements.btnAutofillDemo?.addEventListener('click', () => {
+    elements.authUsername.value = 'admin@gerta.ai';
+    elements.authPassword.value = 'admin123gertai';
+    showToast('Standard administrator credentials populated.', 'info');
+  });
+
+  elements.btnTogglePwd?.addEventListener('click', () => {
+    const isPwd = elements.authPassword.type === 'password';
+    elements.authPassword.type = isPwd ? 'text' : 'password';
+    elements.pwdIconShow.innerHTML = isPwd
+      ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>'
+      : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+  });
+
+  // Transcript Modal Events
+  elements.btnCloseTranscript?.addEventListener('click', closeTranscriptModal);
+  elements.btnDismissTranscript?.addEventListener('click', closeTranscriptModal);
+  elements.btnSyncSessions?.addEventListener('click', () => {
+    loadSessions();
+    showToast('Telephony audit records refreshed.', 'info');
+  });
+  elements.btnCopyTranscript?.addEventListener('click', () => {
+    if (state.selectedSession?.transcript) {
+      navigator.clipboard.writeText(state.selectedSession.transcript);
+      showToast('Transcript copied to clipboard.', 'success');
+    }
+  });
 
   // Sidebar navigation
   document.querySelectorAll('.app-sidebar .nav-item').forEach((item) => {

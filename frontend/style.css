@@ -1513,12 +1513,391 @@ h1, h2, h3, h4, .brand-logo-text, .stat-value {
   line-height: 1.5;
 }
 
-.timeline-item-gerta {
-  position: relative;
-  transition: all var(--transition-normal);
-}
-
 .timeline-item-gerta:hover {
   background: rgba(255, 255, 255, 0.02);
+}
+
+/* =============================================================================
+   12. CLINICAL AUTHENTICATION GATEKEEPER & SESSION ACCESS CONTROL
+   ============================================================================= */
+
+.gerta-auth-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: radial-gradient(circle at 50% 20%, rgba(14, 27, 49, 0.95), rgba(4, 9, 18, 0.98));
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.gerta-auth-overlay.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.auth-card-glass {
+  width: 100%;
+  max-width: 460px;
+  background: rgba(10, 18, 36, 0.85);
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.8), 0 0 40px -10px rgba(0, 240, 255, 0.2);
+  border-radius: var(--radius-lg);
+  padding: 2.5rem 2.25rem 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-card-glass::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--cyan-primary), var(--mint-accent), var(--indigo-accent));
+}
+
+.auth-card-header {
+  text-align: center;
+  margin-bottom: 1.75rem;
+}
+
+.auth-shield-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 1rem;
+  border-radius: var(--radius-md);
+  background: rgba(0, 240, 255, 0.12);
+  border: 1px solid rgba(0, 240, 255, 0.35);
+  color: var(--cyan-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 20px -4px var(--cyan-glow);
+}
+
+.auth-badge-pill {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--mint-accent);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  margin-bottom: 0.75rem;
+}
+
+.auth-title {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.35rem;
+}
+
+.auth-subtitle {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.auth-error-box {
+  background: rgba(244, 63, 94, 0.15);
+  border: 1px solid rgba(244, 63, 94, 0.4);
+  color: #fca5a5;
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  font-size: 0.82rem;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 1.25rem;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.input-icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-leading-icon {
+  position: absolute;
+  left: 0.9rem;
+  width: 17px;
+  height: 17px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.form-input-gerta.with-icon {
+  padding-left: 2.6rem;
+}
+
+.pwd-toggle-btn {
+  position: absolute;
+  right: 0.75rem;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  transition: color var(--transition-fast);
+}
+
+.pwd-toggle-btn:hover {
+  color: #ffffff;
+}
+
+.auth-quick-preset-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.75rem 0.9rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm);
+}
+
+.auth-preset-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.auth-preset-chip {
+  background: transparent;
+  border: none;
+  color: var(--cyan-primary);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+  transition: color var(--transition-fast);
+}
+
+.auth-preset-chip:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.auth-submit-btn {
+  width: 100%;
+  padding: 0.85rem 1.25rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  margin-top: 0.5rem;
+}
+
+.auth-card-footer {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border-subtle);
+  text-align: center;
+}
+
+.auth-hipaa-seal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* User Profile Badge in Topbar */
+.user-profile-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  padding: 0.35rem 0.65rem 0.35rem 0.45rem;
+  border-radius: var(--radius-full);
+}
+
+.user-avatar-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--cyan-primary), var(--indigo-accent));
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.78rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-meta-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1.1;
+}
+
+.user-role {
+  font-size: 0.65rem;
+  color: var(--mint-accent);
+  font-weight: 500;
+}
+
+.btn-logout-icon {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.2rem;
+  display: flex;
+  align-items: center;
+  border-radius: var(--radius-full);
+  transition: all var(--transition-fast);
+}
+
+.btn-logout-icon:hover {
+  color: var(--rose-accent);
+  background: rgba(244, 63, 94, 0.12);
+}
+
+/* Transcript Audit Modal */
+.transcript-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.85rem;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+
+.transcript-meta-grid .meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.transcript-meta-grid .meta-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+}
+
+.transcript-meta-grid .meta-val {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.transcript-dialogue-box {
+  background: rgba(6, 11, 25, 0.6);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 220px;
+}
+
+.transcript-turn {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  max-width: 82%;
+}
+
+.transcript-turn.agent {
+  align-self: flex-start;
+}
+
+.transcript-turn.caller {
+  align-self: flex-end;
+}
+
+.transcript-turn.system {
+  align-self: center;
+  max-width: 95%;
+  text-align: center;
+}
+
+.transcript-turn .turn-speaker {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.transcript-turn.agent .turn-speaker {
+  color: var(--cyan-primary);
+}
+
+.transcript-turn.caller .turn-speaker {
+  color: var(--mint-accent);
+  text-align: right;
+}
+
+.transcript-turn.system .turn-speaker {
+  color: #a5b4fc;
+}
+
+.transcript-turn .turn-bubble {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.transcript-turn.agent .turn-bubble {
+  background: rgba(0, 240, 255, 0.08);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  color: #ffffff;
+  border-top-left-radius: 2px;
+}
+
+.transcript-turn.caller .turn-bubble {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #ffffff;
+  border-top-right-radius: 2px;
+}
+
+.transcript-turn.system .turn-bubble {
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px dashed rgba(99, 102, 241, 0.25);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-family: var(--font-mono);
 }
 

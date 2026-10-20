@@ -401,8 +401,9 @@ curl -X DELETE "http://localhost:8000/patients/{PATIENT_ID}"
 
 The frontend is an ultra-fast, responsive Single Page Application (SPA) designed after modern healthcare administrative shells (featuring an Obsidian Navy theme with Electric Cyan, Cyber Mint, and Amber accents):
 
-- **Left Command Sidebar:** Seamless switching between Command Center, Patient Registry, Voice Agent Console, Call Transcripts, REST API, Assessment Audit, and Future Work modules.
-- **Dynamic Metric StatCards:** Real-time counters with gradient borders displaying active patients, inbound call sessions, validation gate rates, and envelope compliance.
+- **Role-Based Authentication:** HIPAA § 164.312 Access Control gatekeeper with session management for clinical administrators (`admin@gerta.ai`).
+- **Left Command Sidebar:** Seamless switching between Command Center, Patient Registry, Voice Agent Console, Call Transcripts & Telemetry, and Enterprise Roadmap modules.
+- **Dynamic Metric StatCards:** Real-time counters displaying registered patients, inbound call sessions, and 100% server-side validation gate rate.
 - **Interactive Phone Console (Sarah):** Visual telephone terminal with glowing soundwave avatar rings, real-time timer, caller ID configuration, live transcript stream, and tool-call indicators (`lookup_patient`, `register_patient`, `update_patient`).
 - **Patient Directory Table:** Debounced live search across name, phone, and DOB with instant toggle between Active and Soft-Deleted records.
 - **Demographic Drawer & Form Modals:** Comprehensive patient profile inspection and manual registration with real-time validation feedback.
